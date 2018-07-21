@@ -10,3 +10,16 @@ script:
   - go get ./...
   - go build
   - ./integration_test.sh
+before_deploy:
+  # Set up git user name and tag this commit
+  - git config --local user.name "Daniel Baumgarten"
+  - git config --local user.email "fake@mail.com"
+  - git tag latest
+deploy:
+  provider: releases
+  api_key: $GITHUB_TOKEN
+  file: addfs
+  skip_cleanup: true
+  overwrite: true
+  on:
+    branch: master
