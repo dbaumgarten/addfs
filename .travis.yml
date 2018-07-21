@@ -1,6 +1,9 @@
 sudo: required
 dist: trusty
 language: go
+branches:
+  except:
+  - latest
 before_install:
   - sudo apt-get install -qq pkg-config fuse
   - sudo modprobe fuse
@@ -11,15 +14,18 @@ script:
   - go build
   - ./integration_test.sh
 before_deploy:
-  # Set up git user name and tag this commit
-  - git config --local user.name "Daniel Baumgarten"
-  - git config --local user.email "fake@mail.com"
-  - git tag latest
+  - git tag -f latest
+  - git remote add gh https://${TRAVIS_REPO_SLUG%/*}:${GITHUB_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git
+  - git push -f gh latest
+  - git remote remove gh
 deploy:
   provider: releases
-  api_key: $GITHUB_TOKEN
+  api-key: $GITHUB_TOKEN
   file: addfs
   skip_cleanup: true
+  name: Automated build of master
+  body: This release contains the most current version of addfs automatically compiled on every push
   overwrite: true
+  target_commitish: $TRAVIS_COMMIT
   on:
     branch: master
