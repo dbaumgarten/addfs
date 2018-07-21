@@ -18,6 +18,13 @@ If you write them to an addfs-mountpoint the files will be safe from deletion/mo
 This isn't terribly usefull on a local machine, but pretty handy when used on a remote server (ssh/ftp). This way a user-account can upload new files via scp but not modify or delete previously uploaded files. You succesfully created a remote write-once-read-many storage!
 
 # Installation
+Binary Download:
+```
+sudo curl -L -o /usr/bin/addfs https://github.com/dbaumgarten/addfs/releases/download/latest/addfs
+sudo chmod +x /usr/bin/addfs
+```
+
+From source:
 ```
 go install github.com/dbaumgarten/addfs
 ```
