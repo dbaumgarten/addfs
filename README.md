@@ -1,4 +1,5 @@
 # AddFS
+[![Build Status](https://travis-ci.org/dbaumgarten/addfs.svg?branch=master)](https://travis-ci.org/dbaumgarten/addfs)
 
 A FUSE-Filesystem where entries can be added but not be removed or overwritten.
 
