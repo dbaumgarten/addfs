@@ -8,7 +8,7 @@ Inside the mountpoint new files/folders can be created (and written to once) but
 
 # How to use
 ```
-sudo ./addfs [flags] <sourcedir> <mountpoint>
+sudo addfs [flags] <sourcedir> <mountpoint>
 ```
 
 # Why?
@@ -43,7 +43,7 @@ Pass ```--allowRootMutation``` when running addfs and the root-user will be able
 Sure, there is ```--mutableFiles``` for this. You can specify multiple regular expressions and all files/folders matching at least one of the expressions can be modified like on a "normal" filesystem.  
 Example (All files ending on .tmp or .swp are mutable):  
 ```
-sudo ./addfs --mutableFiles '.*\.tmp' --mutableFiles '.*\.swp' /foo /bar
+sudo addfs --mutableFiles '.*\.tmp' --mutableFiles '.*\.swp' /foo /bar
 ```
 ## Who can read the files?
 Inside the mountpoint standard linux file-permissions are active. You can only read/execute a file if you have the necessary permissions on said file.
