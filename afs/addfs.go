@@ -1,8 +1,10 @@
 package afs
 
 import (
+	"errors"
 	"flag"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"time"
@@ -17,6 +19,7 @@ type AddFS struct {
 	pathfs.FileSystem
 	opts                AddFSOpts
 	mutableFilesRegexes []*regexp.Regexp
+	mountpoint          string
 }
 
 type AddFSOpts struct {
@@ -30,6 +33,7 @@ func NewAddFS(source string, opts AddFSOpts) (*AddFS, error) {
 		pathfs.NewLoopbackFileSystem(source),
 		opts,
 		make([]*regexp.Regexp, len(opts.MutableFiles)),
+		"",
 	}
 	for i, v := range opts.MutableFiles {
 		var err error
@@ -41,7 +45,7 @@ func NewAddFS(source string, opts AddFSOpts) (*AddFS, error) {
 	return fs, nil
 }
 
-func (fs *AddFS) Run() error {
+func (fs *AddFS) Mount(mountpoint string) error {
 	origAbs, _ := filepath.Abs(flag.Arg(0))
 	mOpts := &fuse.MountOptions{
 		Options:    []string{"default_permissions"},
@@ -57,12 +61,21 @@ func (fs *AddFS) Run() error {
 	}
 	pathNode := pathfs.NewPathNodeFs(fs, &pathfs.PathNodeFsOptions{})
 	conn := nodefs.NewFileSystemConnector(pathNode.Root(), opts)
-	server, err := fuse.NewServer(conn.RawFS(), flag.Arg(1), mOpts)
+	server, err := fuse.NewServer(conn.RawFS(), mountpoint, mOpts)
 	if err != nil {
 		return err
 	}
+	fs.mountpoint = mountpoint
 	server.Serve()
 	return nil
+}
+
+func (fs *AddFS) Unmount() error {
+	if fs.mountpoint == "" {
+		return errors.New("cannot unmount before successfully mounting")
+	}
+	umcmd := exec.Command("fusermount", "-u", fs.mountpoint)
+	return umcmd.Run()
 }
 
 func (fs *AddFS) rootUserPermit(context *fuse.Context) bool {

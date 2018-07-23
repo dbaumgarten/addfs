@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"syscall"
 
 	"github.com/dbaumgarten/addfs/afs"
@@ -21,6 +22,7 @@ Possible flags:
 
 var allowRootMutation = flag.Bool("allowRootMutation", false, "Allow the root-user to mutate files and folders")
 var ignoreWarnings = flag.Bool("ignoreWarnings", false, "Ignore all errors about file-ownership. ONLY USE IF YOU KNOW WHAT YOU ARE DOING!")
+var keepMounted = flag.Bool("keepMounted", false, "Do not attempt to unmount on exiting")
 var mutableFiles arrayFlags
 
 func main() {
@@ -37,7 +39,7 @@ func main() {
 
 	if !*ignoreWarnings {
 		if os.Getegid() != 0 {
-			fmt.Println("WARNING!: Not running. Only directories that are write-accessible for the user can be mounted. This defeats  addfs' write-protection. Aborting for safety-reasons.")
+			fmt.Println("WARNING!: Not running as root. Only directories that are write-accessible for the user can be mounted. This defeats  addfs' write-protection. Aborting for safety-reasons.")
 			os.Exit(1)
 		}
 		err := checkSourceDirectory(flag.Arg(0))
@@ -56,11 +58,30 @@ func main() {
 		fmt.Println("Error: ", err)
 		os.Exit(1)
 	}
+
+	if !*keepMounted {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt)
+		go unmountOnInterrupt(afs, c)
+	}
+
 	fmt.Println("Starting FUSE-Filesystem!")
-	err = afs.Run()
+	err = afs.Mount(flag.Arg(1))
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
+	}
+}
+
+func unmountOnInterrupt(afs *afs.AddFS, c chan os.Signal) {
+	for _ = range c {
+		fmt.Println("Unmounting...")
+		err := afs.Unmount()
+		if err != nil {
+			fmt.Println("Error when unmounting:", err)
+			os.Exit(1)
+		}
+		fmt.Println("Successfully unmounted!")
 	}
 }
 
